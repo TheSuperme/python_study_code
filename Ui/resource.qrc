@@ -1,0 +1,10 @@
+<RCC>
+  <qresource prefix="icon">
+    <file alias="cartoon">res/QQ20250121-111724.png</file>
+    <file alias="user">res/bfc7698594f4fbb2442627ffc27beff2.png</file>
+    <file alias="lock">res/b7ee77a292d9e3777de1ceb0e2783418.png</file>
+  </qresource>
+  <qresource prefix="logo">
+    <file>res/b.png</file>
+  </qresource>
+</RCC>
