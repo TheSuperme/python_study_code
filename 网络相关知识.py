@@ -309,9 +309,9 @@ if __name__ == "__main__":
             print(f'{client_id_num} 已经连接') 
             
             
-            sub_task = threading.Thread(target=client_task,args=(client_id_num,tcp_client,tcp_client_addr))
+            sub_task = threading.Thread(target=client_task,args=(client_id_num,tcp_client,tcp_client_addr))    
             
-            sub_task.daemon = True
+            sub_task.daemon = True   # 开启守护线程
             
             sub_task.start()
 
@@ -319,3 +319,8 @@ if __name__ == "__main__":
         print("\n服务器正在关闭...")
     finally:
         tcp_socket_server.close()
+        
+        
+        
+
+# 为了防止后面再回来看的时候看不懂，这里请教了gpt老师
