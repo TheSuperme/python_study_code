@@ -26,19 +26,19 @@ import ultis               # 导入自定义的 ultis 模块，里面应包含�
 
 # 1. 服务器初始化阶段：准备开门营业
 tcp_socket_server = socket(AF_INET,SOCK_STREAM) 
-# 创建一个 socket 对象：
-#   - AF_INET: 使用 IPv4 地址。
-#   - SOCK_STREAM: 使用 TCP 协议（流式套接字，提供可靠连接）。
+## 创建一个 socket 对象：
+###   - AF_INET: 使用 IPv4 地址。
+###   - SOCK_STREAM: 使用 TCP 协议（流式套接字，提供可靠连接）。
 
 addr_bind = ("",8080)   # 绑定服务器监听地址和端口
-#   - "": 相当于 '0.0.0.0'，表示监听本机所有可用网络接口。
-#   - 8080: 监听端口号。
+##   - "": 相当于 '0.0.0.0'，表示监听本机所有可用网络接口。
+###   - 8080: 监听端口号。
 
 tcp_socket_server.bind(addr_bind)
-# 将创建的 socket 绑定到指定的 IP 地址和端口。
+## 将创建的 socket 绑定到指定的 IP 地址和端口。
 
 tcp_socket_server.listen(64)
-# 开始监听客户端连接请求。64 为最大等待连接队列的长度。
+## 开始监听客户端连接请求。64 为最大等待连接队列的长度。
 
 client_id_num = 0   # 客户端ID计数器
 
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     finally:
         tcp_socket_server.close() # 无论如何，关闭主监听 socket，释放端口
 
-        
+
 应用示例：智能家居环境监控系统
 任务目标
 构建一个智能家居系统，服务器（Python 代码）部署在中心，接收来自多个传感器客户端（如“客厅温湿度传感器”、“卧室温湿度传感器”）的环境数据，并给予简单回复。
