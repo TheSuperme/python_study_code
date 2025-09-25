@@ -12,7 +12,7 @@ class My_MainWindow(QMainWindow):   #我们自己创建了一个面向对象，�
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.init_ui()
+        self.init_ui()            #aaa
 
     def init_ui(self):
         w1 = Net_assist_widget(self)
