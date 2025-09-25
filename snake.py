@@ -185,7 +185,7 @@ class Game():
                 #如果蛇头撞到边界，游戏结束
                 if  snake_head.x < 0 or snake_head.x >=  WEIGHT or snake_head.y < 0 or snake_head.y >= HEIGH:
                     self.is_gameover = True
-                #如果咬到自己也游戏结束         赵宇龙来了
+                #如果咬到自己也游戏结束         
                 if snake_head in snake.snake_body[1:]:
                     self.is_gameover = True
                 
