@@ -272,7 +272,7 @@
 #**************************************************************************************************************************************************************************
 from socket import *
 import threading
-import ultis
+import tool.ultis as ultis
 
 tcp_socket_server = socket(AF_INET,SOCK_STREAM)
 addr_bind = ("",8080)   #这里不写，代表绑定所以本机ip地址

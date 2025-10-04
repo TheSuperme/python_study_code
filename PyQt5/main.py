@@ -12,7 +12,7 @@ class My_MainWindow(QMainWindow):   #我们自己创建了一个面向对象，�
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.init_ui()            #aaa
+        self.init_ui()            #aaa  bbb
 
     def init_ui(self):
         w1 = Net_assist_widget(self)
@@ -29,3 +29,5 @@ if __name__ == '__main__':
 #    w.init_ui()
     w.show()    
     sys.exit(app.exec_())   #退出程序 
+    
+

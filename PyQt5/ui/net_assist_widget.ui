@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>642</width>
-    <height>396</height>
+    <width>600</width>
+    <height>370</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -39,31 +39,37 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QLineEdit" name="edit_port">
+           <widget class="QLineEdit" name="edit_target_ip">
             <property name="inputMask">
              <string>000.000.000.000</string>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
           <item row="2" column="1">
            <widget class="QLineEdit" name="edit_target_port">
             <property name="inputMask">
-             <string> 99999</string>
+             <string>00000</string>
             </property>
             <property name="text">
-             <string> </string>
+             <string/>
             </property>
             <property name="maxLength">
-             <number>6</number>
+             <number>5</number>
             </property>
             <property name="frame">
              <bool>true</bool>
             </property>
             <property name="cursorPosition">
-             <number>6</number>
+             <number>0</number>
             </property>
             <property name="placeholderText">
-             <string>999</string>
+             <string>例如:8080</string>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -121,7 +127,7 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,0">
        <item>
-        <widget class="QTextEdit" name="textEdit"/>
+        <widget class="QTextEdit" name="edit_recv_data"/>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0,0">
@@ -133,7 +139,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox"/>
+          <widget class="QComboBox" name="cb_local_ip"/>
          </item>
          <item>
           <widget class="QLabel" name="label_2">
@@ -143,14 +149,14 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit"/>
+          <widget class="QLineEdit" name="edit_local_port"/>
          </item>
         </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
-          <widget class="QTextEdit" name="textEdit_2">
+          <widget class="QTextEdit" name="edit_send_data">
            <property name="maximumSize">
             <size>
              <width>16777215</width>
@@ -160,7 +166,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="btn_send">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
              <horstretch>0</horstretch>
