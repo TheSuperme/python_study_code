@@ -127,7 +127,11 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,0">
        <item>
-        <widget class="QTextEdit" name="edit_recv_data"/>
+        <widget class="QTextEdit" name="edit_recv_data">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0,0">
