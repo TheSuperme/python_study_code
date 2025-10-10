@@ -32,7 +32,7 @@
            </widget>
           </item>
           <item row="1" column="0">
-           <widget class="QLabel" name="iPLabel">
+           <widget class="QLabel" name="label_ip">
             <property name="text">
              <string>服务器IP：</string>
             </property>
@@ -63,7 +63,7 @@
              <bool>true</bool>
             </property>
             <property name="cursorPosition">
-             <number>0</number>
+             <number>5</number>
             </property>
             <property name="placeholderText">
              <string>例如:8080</string>
@@ -74,7 +74,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QComboBox" name="comboBox_2">
+           <widget class="QComboBox" name="cb_mode">
             <item>
              <property name="text">
               <string>TCP客户端</string>
@@ -93,7 +93,7 @@
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QLabel" name="Label_4">
+           <widget class="QLabel" name="label_port">
             <property name="text">
              <string>服务器端口：</string>
             </property>
@@ -102,7 +102,7 @@
           <item row="3" column="0" colspan="2">
            <widget class="QPushButton" name="btn_connect">
             <property name="text">
-             <string>连接服务器</string>
+             <string>连接网络</string>
             </property>
            </widget>
           </item>
@@ -125,7 +125,7 @@
       </widget>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,0">
+      <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,0,0">
        <item>
         <widget class="QTextEdit" name="edit_recv_data">
          <property name="readOnly">
@@ -134,9 +134,9 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0,0">
+        <layout class="QHBoxLayout" name="layout_client" stretch="0,1,0,0">
          <item>
-          <widget class="QLabel" name="label">
+          <widget class="QLabel" name="label_local_ip">
            <property name="text">
             <string>本地IP:</string>
            </property>
@@ -146,7 +146,7 @@
           <widget class="QComboBox" name="cb_local_ip"/>
          </item>
          <item>
-          <widget class="QLabel" name="label_2">
+          <widget class="QLabel" name="label_local_port">
            <property name="text">
             <string>本地端口:</string>
            </property>
@@ -154,6 +154,26 @@
          </item>
          <item>
           <widget class="QLineEdit" name="edit_local_port"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="layout_server" stretch="0,1">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>连接对象</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="comboBox"/>
          </item>
         </layout>
        </item>
