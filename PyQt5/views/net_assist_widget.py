@@ -25,6 +25,8 @@ class Net_assist_widget(QWidget):   #我们自己创建了一个面向对象，�
         self.ui = Ui_Net_assist_widget()
         self.tcp_client = None  # 将tcp_client提升为类的属性，方便在其他方法中访问
         self.tcp_serve = None
+        self.connected_client_sockets = [] # 新增：用于存储所有连接的客户端套接字列表
+        self.server_running = False  # 🔧 新增：控制服务器循环的标志位
         self.is_connected = False # 添加一个连接状态的标志
         self.ui.setupUi(self)
         self.init_ui()
@@ -72,7 +74,9 @@ class Net_assist_widget(QWidget):   #我们自己创建了一个面向对象，�
                 break # 退出接收循环
         
         # 循环结束，意味着连接已断开
-        self.tcp_client.close()
+        # 修改这里，在关闭之前检查self.tcp_client是否为None
+        if self.tcp_client: #
+            self.tcp_client.close() #
         self.is_connected = False
         print("连接已关闭")
         # 再次发射信号，通知主线程更新UI为“未连接”状态
@@ -80,60 +84,109 @@ class Net_assist_widget(QWidget):   #我们自己创建了一个面向对象，�
      
     def hand_new_client(self,client_socket,client_addr): 
         try:  
-            while True:
+            while self.server_running:  # 🔧 修改：检查服务器运行状态
                 #5 recv/send接收发送数据
                 print('-------------waiting datd---------------')
                 server_recv_data_byte = client_socket.recv(2048)   #等待客户端发送数据
+                if not server_recv_data_byte:  # 🔧 新增：检查空数据
+                    print(f"客户端 {client_addr} 断开连接")
+                    break
+                
                 server_recv_data = ultis.decode_data(server_recv_data_byte)
                 if server_recv_data:
                     print('client receve data is:',server_recv_data)
                     #服务器回复数据
                     client_socket.send('消息已经收到'.encode('UTF-8'))
                     self.signal_recv_data.emit("recv:" + server_recv_data)
-                else:
-                    self.is_connected = False
-                    client_socket.close()
-                    break   
         except Exception as e:
             print(e)
         finally:
-            pass
+            # 确保客户端套接字在处理结束后关闭
+            if client_socket:
+                print(f"关闭客户端 {client_addr} 连接")
+                try:
+                    client_socket.shutdown(socket.SHUT_RDWR) # 尝试优雅关闭
+                except OSError:
+                    pass # 如果客户端已经关闭，shutdown会报错
+                client_socket.close()
+                # 从列表中移除已断开的客户端套接字
+                if client_socket in self.connected_client_sockets:
+                    self.connected_client_sockets.remove(client_socket)
     #tcp_serve 的线程函数 
     def thread_run_tcp_serve(self,serve_ip,serve_port):
         self.tcp_serve = socket.socket(socket.AF_INET,socket.SOCK_STREAM)   #创建一个tcp的socket对象
+        self.tcp_serve.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         addr = (serve_ip,int(serve_port))
         self.tcp_serve.bind(addr)
         self.tcp_serve.listen(64)   #变为被动模式
          # 连接成功,更新一下状态位
         self.is_connected = True
+        self.server_running = True  # 🔧 新增：标记服务器开始运行
+        self.connected_client_sockets.clear() # 启动服务器时清空客户端列表
+        self.signal_update_status.emit(True, "", 0)
         # 如果有新的客户端来链接服务器，那么就产生一个新的套接字专门为这个客户端服务
         # tcp_client_socket用来为这个客户端服务
         # self.tcp_serve就可以省下来专门等待其他新客户端的链接 
+        # 🔧 关键修改2：设置超时，避免accept永久阻塞
+        self.tcp_serve.settimeout(1.0)
         try: 
-            while True:
-                client_socket,client_addr = self.tcp_serve.accept()       #将接入服务端的客户端的信息通过提取出来（利用元组的自动解包）
-                print('有新的客户端接入：',client_addr)
-                self.tcp_serve = client_socket  # 记录连接的客户端套接字
-                
-                thread = threading.Thread(target= self.hand_new_client,args=(client_socket,client_addr))
-                thread.daemon = True
-                thread.start()
-                
+            while self.server_running:  # 🔧 修改：使用标志位控制循环
+                try: 
+                    client_socket,client_addr = self.tcp_serve.accept()       #将接入服务端的客户端的信息通过提取出来（利用元组的自动解包）
+                    print('有新的客户端接入：',client_addr)
+                    # 将客户端套接字添加到列表中
+                    self.connected_client_sockets.append(client_socket)
+                    # 针对这个客户端启动一个线程来处理其数据
+                    thread = threading.Thread(target= self.hand_new_client,args=(client_socket,client_addr))
+                    thread.daemon = True
+                    thread.start()
+                except socket.timeout:  # 🔧 新增：处理超时，继续循环
+                    continue
+                except Exception as e:
+                    if self.server_running:  # 只在服务器运行时打印错误
+                        print(f"Accept异常: {e}")
+                        self.signal_update_status.emit(False, "", 0)
+                    break
         except Exception as e:
             print(e)
         finally:
-            #6 关闭套接字，不再接收心得客户端接入，不影响已有客户端交互
+             # ✅ 修复：简化关闭逻辑，只保留一份
+            print("开始清理服务器资源...")
+            
+            # 关闭所有客户端连接
+            for sock in list(self.connected_client_sockets):
+                try:
+                    sock.shutdown(socket.SHUT_RDWR)
+                except:
+                    pass
+                try:
+                    sock.close()
+                except:
+                    pass
+            self.connected_client_sockets.clear()
+            
+            # 关闭服务器socket
+            if self.tcp_serve:
+                try:
+                    self.tcp_serve.close()
+                except:
+                    pass
+                self.tcp_serve = None
+            
+            self.is_connected = False
+            self.server_running = False
+            print("TCP服务器已完全关闭")
             self.signal_update_status.emit(False, "", 0)
-            self.tcp_serve.close()
-        
+            
     #当设置模式为tcp client时执行的函数
     def handle_client_connect(self):
         if self.is_connected:       #如果之前已经连接，那么当再次点击就是断开连接
-            self.is_connected = False
+            self.is_connected = False  # 🔧 先设置标志位
             if self.tcp_client:     #如果客户端存在，那么就关闭
                 try:
                     self.tcp_client.shutdown(socket.SHUT_RDWR)
                     self.tcp_client.close()
+                    self.tcp_client = None # 确保在关闭后设置为None
                     self.signal_update_status.emit(False, "", 0)
                 except Exception as e:
                     print(f"关闭socket时出错: {e}")
@@ -154,15 +207,26 @@ class Net_assist_widget(QWidget):   #我们自己创建了一个面向对象，�
     #当设置模式为tcp serve时执行的函数
     def handle_server_run(self):
         if self.is_connected:       #如果之前已经连接，那么当再次点击就是断开连接
+            self.server_running = False  # 🔧 关键修改3：设置标志位，停止accept循环
             self.is_connected = False
             if self.tcp_serve:     #如果客户端存在，那么就关闭
                 try:
-                    self.tcp_serve.shutdown(socket.SHUT_RDWR)
-                    self.tcp_serve.close()
+                    self.tcp_serve.close()  # 直接关闭，不调用shutdown
+                    self.tcp_serve = None # 确保在关闭后设置为None
                     self.signal_update_status.emit(False, "", 0)
                 except Exception as e:
                     print(f"关闭socket时出错: {e}")
+                # 关闭所有客户端连接
+            for sock in list(self.connected_client_sockets):
+                try:
+                    sock.shutdown(socket.SHUT_RDWR)
+                    sock.close()
+                except:
+                    pass
+            self.connected_client_sockets.clear()
+            self.signal_update_status.emit(False, "", 0)
             return
+        
         server_ip = self.ui.edit_target_ip.text()
         server_port = self.ui.edit_target_port.text()
         print("开启服务器")
@@ -185,15 +249,26 @@ class Net_assist_widget(QWidget):   #我们自己创建了一个面向对象，�
                     print(f"Error shutting down client socket: {e}")
                 finally:
                     self.tcp_client = None
+                    
             elif self.tcp_serve:
+                # 🔧 关键修改5：服务器关闭逻辑
+                self.server_running = False
                 try:
-                    self.tcp_serve.shutdown(socket.SHUT_RDWR)
                     self.tcp_serve.close()
                 except Exception as e:
                     print(f"Error shutting down server socket: {e}")
                 finally:
                     self.tcp_serve = None
-            self.signal_update_status.emit(False, "", 0)  # Update status to disconnected
+        # 关闭所有客户端连接
+            for sock in list(self.connected_client_sockets):
+                try:
+                    sock.shutdown(socket.SHUT_RDWR)
+                    sock.close()
+                except:
+                    pass
+            self.connected_client_sockets.clear()
+        
+            self.signal_update_status.emit(False, "", 0)
             return
         current_index = self.ui.cb_mode.currentIndex()
         if current_index == 0:
@@ -206,18 +281,57 @@ class Net_assist_widget(QWidget):   #我们自己创建了一个面向对象，�
             print("当前的设置模式为:UDP")
             
         
-    #连接好服务器后的【发送】按钮
     def on_send_clicked(self):
-        if self.is_connected == False:       #如果没有连接服务器，那么此时的发送数据按钮无效
-            print("请先链接服务器")
-            return   
-        #当执行到这里，说明已经连接好服务器了，开始执行发送逻辑
+        # 先判断当前模式
+        current_index = self.ui.cb_mode.currentIndex()
         user_input_text = self.ui.edit_send_data.toPlainText()
-        if user_input_text != '':
-            print(f"tcp client发送了: {user_input_text}")
-            self.tcp_client.send(user_input_text.encode("UTF-8"))   #注意发送的编码格式
-            self.signal_recv_data.emit("send:" + user_input_text)
-            
+        if user_input_text == '':
+            return # 没有要发送的数据
+
+        if current_index == 0: # TCP客户端模式
+            if not self.is_connected or not self.tcp_client:
+                print("请先链接服务器")
+                return
+            try:
+                print(f"tcp client发送了: {user_input_text}")
+                self.tcp_client.send(user_input_text.encode("UTF-8"))
+                self.signal_recv_data.emit("send:" + user_input_text)
+            except Exception as e:
+                print(f"客户端发送数据失败: {e}")
+                # 可以在此处考虑断开连接并更新UI
+                self.is_connected = False
+                if self.tcp_client:
+                    self.tcp_client.close()
+                    self.tcp_client = None
+                self.signal_update_status.emit(False, "", 0)
+
+        elif current_index == 1: # TCP服务器模式
+            if not self.is_connected or not self.tcp_serve: # 检查服务器是否在监听
+                print("服务器未开启或未在监听")
+                return
+
+            if not self.connected_client_sockets:
+                print("没有客户端连接，无法发送数据")
+                return
+
+            print(f"tcp server向所有客户端发送了: {user_input_text}")
+            # 遍历所有连接的客户端，逐一发送数据
+            for client_sock in list(self.connected_client_sockets): # 使用list()创建副本，以防止在循环中修改列表
+                try:
+                    client_sock.send(user_input_text.encode("UTF-8"))
+                    self.signal_recv_data.emit(f"send to {client_sock.getpeername()}:" + user_input_text)
+                except Exception as e:
+                    print(f"向客户端 {client_sock.getpeername()} 发送数据失败: {e}")
+                    # 如果发送失败，说明客户端可能已经断开，将其从列表中移除
+                    if client_sock in self.connected_client_sockets:
+                        self.connected_client_sockets.remove(client_sock)
+                    try:
+                        client_sock.close()
+                    except Exception:
+                        pass # 忽略关闭错误
+
+        else: # UDP模式 (此处省略，根据您的UDP实现来添加)
+            print("当前的设置模式为:UDP, 发送逻辑待实现")        
     #更改设置模式是触发        
     def on_mode_change(self):
         self.is_connected = False
@@ -251,7 +365,7 @@ class Net_assist_widget(QWidget):   #我们自己创建了一个面向对象，�
             print("当前的设置模式为:UDP")
     # 4. ***** 创建槽函数 *****
     """
-    这个是槽函数，在主线程中被调用，用于安全地更新UI
+    这个是槽函数，在主线程中被调用，用于安全地更新UIsocket.timeout
     """
     def append_received_data(self, text):
         # 使用 append 而不是 setText，这样可以保留历史记录
@@ -266,7 +380,7 @@ class Net_assist_widget(QWidget):   #我们自己创建了一个面向对象，�
         这个是槽函数，用于根据连接状态更新UI
     """    
     def update_connection_status(self, is_connected, local_ip, local_port):
-        if self.is_connected:
+        if is_connected:
             self.ui.btn_connect.setText("断开连接(已连接)")
             cb_local_ip_index = self.ui.cb_local_ip.findText(local_ip)  #获取当前组件cb_local_ip选择的ip的索引
             if cb_local_ip_index != -1:   #确保获取的索引值有效
